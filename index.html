@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Typing Practice</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 1s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        p {
+            font-size: 1.2em;
+            margin: 10px 0;
+        }
+        input, button {
+            padding: 15px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            margin: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        input[type="text"] {
+            width: 80%;
+            max-width: 500px;
+            background: rgba(255,255,255,0.9);
+            color: #333;
+        }
+        input[type="number"] {
+            width: 150px;
+            background: rgba(255,255,255,0.9);
+            color: #333;
+        }
+        input:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(255,255,255,0.8);
+        }
+        button {
+            background: #ff6b6b;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #ff5252;
+            transform: scale(1.05);
+        }
+        #practiceSection, #results {
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            animation: slideUp 0.5s ease-out;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        #displaySentence {
+            font-size: 1.5em;
+            margin: 20px 0;
+            font-weight: 300;
+        }
+        #typingArea {
+            width: 80%;
+            max-width: 500px;
+            padding: 15px;
+            font-size: 1.2em;
+            background: rgba(255,255,255,0.9);
+            color: #333;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+        }
+        #typingArea:focus {
+            box-shadow: 0 0 10px rgba(255,255,255,0.8);
+        }
+        #progress {
+            font-size: 2em;
+            margin: 20px 0;
+            font-weight: 700;
+        }
+        #progressBar {
+            width: 80%;
+            height: 20px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 10px;
+            margin: 20px auto;
+            overflow: hidden;
+        }
+        #progressFill {
+            height: 100%;
+            background: linear-gradient(90deg, #4ecdc4, #44a08d);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        #timer {
+            font-size: 1.5em;
+            margin: 10px 0;
+        }
+        #results h2 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        #results p {
+            font-size: 1.3em;
+            margin: 10px 0;
+        }
+        @media (max-width: 600px) {
+            h1 { font-size: 2em; }
+            input, button { width: 90%; }
+            #practiceSection, #results { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 Daily Typing Practice</h1>
+    <p>Enter a sentence and the number of times to master it!</p>
+    <input type="text" id="sentenceInput" placeholder="Enter your daily sentence here">
+    <h2><i>How many times u want to practice buddy...</i></h2>
+    <input type="number" id="repetitionsInput" placeholder="100" min="1" value="100">
+    <button id="startBtn">Start Practice</button>
+    <div id="practiceSection" style="display: none;">
+        <p id="displaySentence"></p>
+        <input type="text" id="typingArea" placeholder="Type the sentence here">
+        <p id="progress">Repetitions: 0 / 100</p>
+        <div id="progressBar">
+            <div id="progressFill"></div>
+        </div>
+        <p id="timer">Time: 0s</p>
+    </div>
+    <div id="results" style="display: none;">
+        <h2>🎉 Results</h2>
+        <p id="totalTime"></p>
+        <p id="wpm"></p>
+        <p id="accuracy"></p>
+        <button id="resetBtn">Reset</button>
+    </div>
+
+    <script>
+        let sentence = '';
+        let repetitions = 0;
+        let targetRepetitions = 100;
+        let startTime;
+        let totalChars = 0;
+        let correctChars = 0;
+        let timerInterval;
+
+        document.getElementById('startBtn').addEventListener('click', startPractice);
+        document.getElementById('typingArea').addEventListener('input', checkTyping);
+        document.getElementById('resetBtn').addEventListener('click', reset);
+
+        function startPractice() {
+            sentence = document.getElementById('sentenceInput').value.trim();
+            targetRepetitions = parseInt(document.getElementById('repetitionsInput').value);
+            if (!sentence || isNaN(targetRepetitions) || targetRepetitions < 1) {
+                alert('Please enter a valid sentence and a positive number for repetitions.');
+                return;
+            }
+            document.getElementById('practiceSection').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('displaySentence').textContent = sentence;
+            repetitions = 0;
+            totalChars = 0;
+            correctChars = 0;
+            document.getElementById('progress').textContent = `Repetitions: ${repetitions} / ${targetRepetitions}`;
+            startTime = Date.now();
+            timerInterval = setInterval(updateTimer, 1000);
+            document.getElementById('typingArea').focus();
+        }
+
+        function checkTyping() {
+            const typed = document.getElementById('typingArea').value;
+            if (typed === sentence) {
+                repetitions++;
+                totalChars += sentence.length;
+                correctChars += sentence.length;
+                document.getElementById('progress').textContent = `Repetitions: ${repetitions} / ${targetRepetitions}`;
+                document.getElementById('progressFill').style.width = `${(repetitions / targetRepetitions) * 100}%`;
+                document.getElementById('typingArea').value = '';
+                if (repetitions >= targetRepetitions) {
+                    endPractice();
+                }
+            }
+        }
+
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            document.getElementById('timer').textContent = `Time: ${elapsed}s`;
+        }
+
+        function endPractice() {
+            clearInterval(timerInterval);
+            const totalTime = (Date.now() - startTime) / 1000 / 60; // in minutes
+            const words = sentence.split(' ').length * targetRepetitions; // total words
+            const wpm = (words / totalTime).toFixed(2);
+            const accuracy = ((correctChars / totalChars) * 100).toFixed(2);
+            document.getElementById('totalTime').textContent = `Total Time: ${(totalTime * 60).toFixed(2)} seconds`;
+            document.getElementById('wpm').textContent = `WPM: ${wpm}`;
+            document.getElementById('accuracy').textContent = `Accuracy: ${accuracy}%`;
+            document.getElementById('practiceSection').style.display = 'none';
+            document.getElementById('results').style.display = 'block';
+        }
+
+        function reset() {
+            document.getElementById('sentenceInput').value = '';
+            document.getElementById('repetitionsInput').value = '100';
+            document.getElementById('practiceSection').style.display = 'none';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('progressFill').style.width = '0%';
+        }
+    </script>
+</body>
+</html>
